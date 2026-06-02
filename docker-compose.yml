@@ -1,20 +1,26 @@
+# Docker Compose configuration for Azure DNS DDNS Updater
+# Supports both regular docker compose (environment variables) and Docker Swarm stack (secrets)
+#
+# Primary option: environment variables (works with docker compose up -d)
+# Optional option: Docker secrets (use with docker stack deploy)
+
 services:
   azure-ddns:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: dntim/azure-ddns:latest
     container_name: azure-ddns
     restart: unless-stopped
 
-    # Option 1: Docker secrets (recommended)
-    secrets:
-      - ddns_azure_tenant_id
-      - ddns_azure_client_id
-      - ddns_azure_client_secret
-
+    # CREDENTIALS CONFIGURATION - Choose ONE of the following options:
+    #
+    # Option 1 (PRIMARY): Environment variables
+    # Use: docker compose up -d
+    # Keep secrets section below commented out.
     environment:
+      - TZ=UTC
       - DDNS__AuthMode=ClientSecret
+      - DDNS__TenantId=00000000-0000-0000-0000-000000000000
+      - DDNS__ClientId=00000000-0000-0000-0000-000000000000
+      - DDNS__ClientSecret=your_client_secret
       - DDNS__SubscriptionId=00000000-0000-0000-0000-000000000000
       - DDNS__ResourceGroupName=dns-rg
       - DDNS__ZoneName=example.com
@@ -24,28 +30,42 @@ services:
       - DDNS__UpdateIntervalSeconds=300
       - DDNS__TtlSeconds=300
 
-      # Option 2: Environment variables (uncomment if not using Docker secrets)
-      # - DDNS__TenantId=00000000-0000-0000-0000-000000000000
-      # - DDNS__ClientId=00000000-0000-0000-0000-000000000000
-      # - DDNS__ClientSecret=your_client_secret
-
       # Optional: customize public IP providers
       # - DDNS__IpLookupUrls__0=https://api.ipify.org
       # - DDNS__IpLookupUrls__1=https://ifconfig.me/ip
       # - DDNS__IpLookupUrls__2=https://checkip.amazonaws.com
 
-#  watchtower:
-#    image: containrrr/watchtower
-#    container_name: watchtower
-#    restart: unless-stopped
-#    volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock
-#    command: --interval 300 --cleanup azure-ddns
+    # Option 2 (OPTIONAL): Docker secrets (Docker Swarm stack)
+    # Use: docker stack deploy -c docker-compose.yml ddns
+    # For this mode:
+    # 1) Comment out TenantId/ClientId/ClientSecret in environment above.
+    # 2) Uncomment secrets block below.
+    # secrets:
+    #   - ddns_azure_tenant_id
+    #   - ddns_azure_client_id
+    #   - ddns_azure_client_secret
 
-secrets:
-  ddns_azure_tenant_id:
-    file: ./secrets/ddns_azure_tenant_id
-  ddns_azure_client_id:
-    file: ./secrets/ddns_azure_client_id
-  ddns_azure_client_secret:
-    file: ./secrets/ddns_azure_client_secret
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # OPTIONAL: Watchtower for automatic updates
+  # Note: Use only with docker compose (not stack deploy).
+  # watchtower:
+  #   image: containrrr/watchtower:latest
+  #   container_name: watchtower
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   command: --interval 300 --cleanup azure-ddns
+
+# Uncomment this section only when using Docker secrets mode above.
+# secrets:
+#   ddns_azure_tenant_id:
+#     file: ./secrets/ddns_azure_tenant_id
+#   ddns_azure_client_id:
+#     file: ./secrets/ddns_azure_client_id
+#   ddns_azure_client_secret:
+#     file: ./secrets/ddns_azure_client_secret
