@@ -1,0 +1,51 @@
+services:
+  azure-ddns:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dntim/azure-ddns:latest
+    container_name: azure-ddns
+    restart: unless-stopped
+
+    # Option 1: Docker secrets (recommended)
+    secrets:
+      - ddns_azure_tenant_id
+      - ddns_azure_client_id
+      - ddns_azure_client_secret
+
+    environment:
+      - DDNS__AuthMode=ClientSecret
+      - DDNS__SubscriptionId=00000000-0000-0000-0000-000000000000
+      - DDNS__ResourceGroupName=dns-rg
+      - DDNS__ZoneName=example.com
+      - DDNS__Hostnames__0=@
+      - DDNS__Hostnames__1=www
+      - DDNS__Hostnames__2=api.example.com
+      - DDNS__UpdateIntervalSeconds=300
+      - DDNS__TtlSeconds=300
+
+      # Option 2: Environment variables (uncomment if not using Docker secrets)
+      # - DDNS__TenantId=00000000-0000-0000-0000-000000000000
+      # - DDNS__ClientId=00000000-0000-0000-0000-000000000000
+      # - DDNS__ClientSecret=your_client_secret
+
+      # Optional: customize public IP providers
+      # - DDNS__IpLookupUrls__0=https://api.ipify.org
+      # - DDNS__IpLookupUrls__1=https://ifconfig.me/ip
+      # - DDNS__IpLookupUrls__2=https://checkip.amazonaws.com
+
+#  watchtower:
+#    image: containrrr/watchtower
+#    container_name: watchtower
+#    restart: unless-stopped
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    command: --interval 300 --cleanup azure-ddns
+
+secrets:
+  ddns_azure_tenant_id:
+    file: ./secrets/ddns_azure_tenant_id
+  ddns_azure_client_id:
+    file: ./secrets/ddns_azure_client_id
+  ddns_azure_client_secret:
+    file: ./secrets/ddns_azure_client_secret
