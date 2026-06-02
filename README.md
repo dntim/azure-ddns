@@ -154,7 +154,7 @@ docker secret rm ddns_azure_tenant_id ddns_azure_client_id ddns_azure_client_sec
 echo "new_tenant_id" | docker secret create ddns_azure_tenant_id -
 echo "new_client_id" | docker secret create ddns_azure_client_id -
 echo "new_client_secret" | docker secret create ddns_azure_client_secret -
-docker service update --force ddns_ddns-updater
+docker service update --force ddns_azure-ddns
 ```
 
 ## Platform Support
@@ -165,7 +165,7 @@ Runtimes: Docker, Podman, containerd, Kubernetes
 
 ## CI/CD
 
-Use Docker Buildx in GitHub Actions to build and publish multi-architecture images to Docker Hub on every push to main.
+GitHub Actions automatically builds and publishes multi-architecture images to Docker Hub as `dntim/azure-ddns:latest` on every push to `main`.
 
 ## License
 
